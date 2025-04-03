@@ -47,7 +47,6 @@ def apply_calculations(df):
         # Extract quarter from REPDTE (date index)
         months_up_to_quarter = df.columns.to_series().dt.quarter.map({1: 3, 2: 6, 3: 9, 4: 12})
 
-        #BUG: Find the other thing you should be subtracting from this!
         df.loc["Annualized Earnings (Pre-Tax)"] = ((df.loc["PTAXNETINC"] + df.loc["IGLSEC"]) / months_up_to_quarter) * 12
     except Exception as e:
         print(f"Error calculating Annualized Earnings (Pre-Tax): {e}")
@@ -64,14 +63,12 @@ def apply_calculations(df):
         df.loc["Annualized Earnings (Tax-Adjusted)"] = None
         
     try:
-        #BUG: This isn't matching goal!
         df.loc["Allowance/Loans"] = round((df.loc["NETINC"] / (df.loc["LNLSGR"]) * 100), 2)
     except Exception as e:
         print(f"Error calculating Allowance/Loans: {e}")
         df.loc["Allowance/Loans"] = None
         
     try:
-        #BUG: This isn't matching goal!
         months_up_to_quarter = df.columns.to_series().dt.quarter.map({1: 3, 2: 6, 3: 9, 4: 12})
         df.loc["Annualized Losses/Loans"] = round((((df.loc["NTLNLS"] / months_up_to_quarter)*12)/df.loc["LNLSGR"]) * 100, 2)
     except Exception as e:
@@ -90,13 +87,22 @@ def apply_calculations(df):
         print(f"Error calculating (90 Days Past Due + Nonaccrual + REO) / (Capital + Allowance): {e}")
         df.loc["(90 Days Past Due + Nonaccrual + REO) / (Capital + Allowance)"] = None
         
-        
-        
-    
-        
-    
+    try:
+        months_up_to_quarter = df.columns.to_series().dt.quarter.map({1: 3, 2: 6, 3: 9, 4: 12})
 
-    
+        # Correct annualized pre-tax *excluding* unrealized gains/losses
+        annualized_pre_tax = ((df.loc["PTAXNETINC"] + df.loc["IGLSEC"]) / months_up_to_quarter) * 12
+        annualized_post_tax = (df.loc["NETINC"] / months_up_to_quarter) * 12
 
+        tax_rate = (annualized_pre_tax - annualized_post_tax) / annualized_pre_tax
+        df.loc["Tax Rate (%)"] = round(tax_rate * 100, 2)
+
+        post_tax_return = 1 - tax_rate
+        df.loc["Post Tax Percent Return (%)"] = round(post_tax_return * 100, 2)
+
+    except Exception as e:
+        print(f"Error calculating Tax Rate and Post Tax Percent Return: {e}")
+        df.loc["Tax Rate (%)"] = None
+        df.loc["Post Tax Percent Return (%)"] = None
 
     return df

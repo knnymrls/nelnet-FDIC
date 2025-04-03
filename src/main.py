@@ -1,3 +1,6 @@
+# **Bank Name: First National Bank of Omaha**
+# Bank Code: 15545
+
 import requests
 import pandas as pd
 from calculations import apply_calculations  # Import calculations from external file
@@ -55,8 +58,12 @@ def process_data(data):
     return df
 
 def save_to_csv(df, filename="fdic_data.csv"):
-    """Saves the DataFrame to a CSV file."""
-    df.to_csv(filename)
+    """Saves the DataFrame to a CSV file with bank metadata at the top and a spacer row."""
+    with open(filename, "w") as f:
+        f.write("Bank Name:,First National Bank of Omaha\n")
+        f.write("Bank Code:,15545\n")
+        f.write("\n")  # Empty line for spacing
+        df.to_csv(f)
     print(f"Data saved to {filename}")
 
 if __name__ == "__main__":
